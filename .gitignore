@@ -1,0 +1,25 @@
+# Python / uv
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Environments & secrets
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+
+# Generated runtime / evals / local data
+qdrant_storage/
+postgres_data/
+evals/last_report.json
+evals/last_report.md

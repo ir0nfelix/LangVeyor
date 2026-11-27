@@ -1,0 +1,66 @@
+bpmn LR
+layout auto
+pool LangVeyor "MES RCA: Расследование обращений парка"
+  lane L_Intake "Приём и триаж (FAST)"
+    start s1 "Запрос из парка"
+    service task t_intake "Разбор жалобы (Intake)"
+    exclusive gate g_serial "Серийник?"
+    service task t_triage "Триаж BPMN и Qdrant RAG"
+    end e_clarify "Запрос серийника"
+  lane L_Investigator "Следователь и MES SQL"
+    service task t_gen "Генеалогия и история"
+    exclusive gate g_found "В MES?"
+    service task t_inconcl "Статус INCONCLUSIVE"
+    exclusive gate g_sym "Симптом?"
+    service task t_bat "АКБ и дрейф стенда"
+    service task t_mot "Оператор и момент"
+    service task t_full "Все 5 проверок SQL"
+    exclusive gate g_recall "Брак > 10%?"
+    service task t_recall "Список машин отзыва"
+    exclusive gate g_repeat "Повтор?"
+    service task t_esc "Флаг эскалации"
+    service task t_recheck "Добор 5 проверок БД"
+  lane L_Auditor "Ревизор и Веб-поиск"
+    service task t_audit "Аудит фактов и BPMN"
+    exclusive gate g_audit "Вердикт?"
+    service task t_web "Поиск по BOM (Web)"
+  lane L_Verdict "Вердикт и HITL Postgres"
+    service task t_verdict "Сборка отчёта RCA"
+    user task t_hitl "HITL решение оператора"
+    exclusive gate g_hitl "Одобрено?"
+    service task t_commit "ACID запись в Postgres"
+    end e_ok "Инцидент закрыт"
+    end e_rejected "Отклонено"
+
+s1 --> t_intake
+t_intake --> g_serial
+g_serial --> t_triage "Да"
+g_serial /--> e_clarify "Нет"
+t_triage --> t_gen
+t_gen --> g_found
+g_found --> g_sym "Да"
+g_found /--> t_inconcl "Нет"
+t_inconcl --> t_verdict
+g_sym --> t_bat "АКБ"
+g_sym --> t_mot "Мотор"
+g_sym /--> t_full "Питание"
+t_bat --> g_recall
+t_mot --> g_recall
+t_full --> g_recall
+g_recall --> g_repeat "До 10%"
+g_recall /--> t_recall "Более 10%"
+t_recall --> g_repeat
+g_repeat --> t_audit "Нет"
+g_repeat /--> t_esc "Да"
+t_esc --> t_audit
+t_audit --> g_audit
+g_audit --> t_web "БД чиста"
+g_audit --> t_verdict "APPROVED"
+g_audit /--> t_recheck "REJECTED"
+t_recheck --> t_audit
+t_web --> t_verdict
+t_verdict --> t_hitl
+t_hitl --> g_hitl
+g_hitl --> t_commit "Да"
+g_hitl /--> e_rejected "Нет"
+t_commit --> e_ok

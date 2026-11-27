@@ -1,0 +1,63 @@
+{
+  "seed": 20260101,
+  "summary": {
+    "total_cars": 451,
+    "total_battery_lots": 18,
+    "total_route_sheets": 1460,
+    "total_links": 1442,
+    "total_executions": 4786,
+    "total_measurements": 5268,
+    "hold_lot": "LOT-BAT-2026-009"
+  },
+  "anomalies": {
+    "lot_defect_recall": {
+      "target_car": "CAR-2026-0412",
+      "root_lot": "LOT-BAT-2026-014",
+      "supplier": "VoltCell Ningbo Ltd.",
+      "defect_rate_pct": 20.0,
+      "affected_cars": [
+        "CAR-2026-0401",
+        "CAR-2026-0402",
+        "CAR-2026-0403",
+        "CAR-2026-0404",
+        "CAR-2026-0405",
+        "CAR-2026-0406",
+        "CAR-2026-0407",
+        "CAR-2026-0408",
+        "CAR-2026-0409",
+        "CAR-2026-0410",
+        "CAR-2026-0411",
+        "CAR-2026-0412"
+      ],
+      "affected_count": 12
+    },
+    "charging_stand_channel_drift": {
+      "target_car": "CAR-2026-0388",
+      "instrument_code": "STAND-03",
+      "channel_no": 7,
+      "calibration_due_at": "2026-09-30T00:00:00+00:00",
+      "date_window": "2026-10"
+    },
+    "operator_quality_drop": {
+      "target_car": "CAR-2026-0295",
+      "operator_name": "Петров А.В.",
+      "operator_code": "OP-02",
+      "tech_map": "TM-CAR-FINAL",
+      "date_window": "2026-08"
+    },
+    "repeat_complaint": {
+      "target_car": "CAR-2026-0199",
+      "prior_ticket_status": "CLOSED",
+      "prior_rework_node": "CAR-TEST"
+    },
+    "clean_db_web_research": {
+      "target_car": "CAR-2026-0777",
+      "root_lot": "LOT-BAT-2026-015",
+      "component_specs": {
+        "motor": "RS550-24V",
+        "bms": "JK-BMS-6S",
+        "chemistry": "Li-Po 6S 35Ah"
+      }
+    }
+  }
+}

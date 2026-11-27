@@ -1,0 +1,145 @@
+[
+  {
+    "case_id": "GC-01-LOT-DEFECT-RECALL",
+    "description": "Битая партия АКБ LOT-BAT-2026-014 (20% брак по ёмкости) и обязательный Recall 12 машинок",
+    "query": "В парке аттракционов жалуются на машинку CAR-2026-0412 — батарея не держит заезд, садится через 10 минут.",
+    "expected_tracking_code": "CAR-2026-0412",
+    "expected_needs_clarification": false,
+    "expected_root_cause_type": "LOT_DEFECT",
+    "expected_entities": ["LOT-BAT-2026-014", "VoltCell", "20.0", "CAR-2026-0412"],
+    "expected_required_tools": [
+      "get_item_genealogy",
+      "get_item_history",
+      "get_lot_quality_stats",
+      "find_affected_products_by_lot"
+    ],
+    "expected_web_research": false,
+    "expected_recall_cars_from_manifest": true,
+    "expected_action_types": ["CREATE_SUPPORT_TICKET", "CREATE_LOT_RECALL"],
+    "simulate_incomplete_draft_catch": true
+  },
+  {
+    "case_id": "GC-02-STAND03-CH7-DRIFT",
+    "description": "Плывущий канал 7 зарядного стенда STAND-03 в октябре 2026 и просроченная поверка",
+    "query": "Машинка CAR-2026-0388 быстро теряет заряд на трассе, батарея не вытягивает смену.",
+    "expected_tracking_code": "CAR-2026-0388",
+    "expected_needs_clarification": false,
+    "expected_root_cause_type": "INSTRUMENT_CHANNEL_DRIFT",
+    "expected_entities": ["STAND-03", "7", "2026-09-30"],
+    "expected_required_tools": [
+      "get_item_genealogy",
+      "get_item_history",
+      "get_lot_quality_stats",
+      "get_instrument_channel_anomalies"
+    ],
+    "expected_web_research": false,
+    "expected_recall_cars_from_manifest": false,
+    "expected_action_types": ["CREATE_SUPPORT_TICKET", "CREATE_CALIBRATION_HOLD"],
+    "simulate_incomplete_draft_catch": false
+  },
+  {
+    "case_id": "GC-03-OPERATOR-PETROV-SPIKE",
+    "description": "Просадка качества оператора Петрова А.В. в августе 2026 (перетяжка редуктора RS550-24V)",
+    "query": "У машинки CAR-2026-0295 заклинил моторчик на заезде, слышен скрежет редуктора.",
+    "expected_tracking_code": "CAR-2026-0295",
+    "expected_needs_clarification": false,
+    "expected_root_cause_type": "OPERATOR_QUALITY_DROP",
+    "expected_entities": ["Петров", "OP-02", "RS550-24V"],
+    "expected_required_tools": [
+      "get_item_genealogy",
+      "get_item_history",
+      "get_operator_anomalies"
+    ],
+    "expected_web_research": false,
+    "expected_recall_cars_from_manifest": false,
+    "expected_action_types": ["CREATE_SUPPORT_TICKET"],
+    "simulate_incomplete_draft_catch": false
+  },
+  {
+    "case_id": "GC-04-REPEAT-COMPLAINT-ESCALATION",
+    "description": "Повторное обращение по CAR-2026-0199 с прошлым закрытым тикетом и REWORK на тестовом заезде",
+    "query": "Машинка CAR-2026-0199 снова дёргается при старте и глохнет под нагрузкой.",
+    "expected_tracking_code": "CAR-2026-0199",
+    "expected_needs_clarification": false,
+    "expected_root_cause_type": "REPEAT_FAILURE",
+    "expected_entities": ["CAR-2026-0199", "CLOSED"],
+    "expected_required_tools": [
+      "get_item_genealogy",
+      "get_item_history"
+    ],
+    "expected_web_research": false,
+    "expected_recall_cars_from_manifest": false,
+    "expected_action_types": ["ESCALATE_REPEAT_TICKET"],
+    "simulate_incomplete_draft_catch": false
+  },
+  {
+    "case_id": "GC-05-CLEAN-DB-WEB-RESEARCH",
+    "description": "100% чистая БД CAR-2026-0777 при -5C на улице -> маршрутизация в web_researcher_node",
+    "query": "На уличной площадке при -5°C у машинки CAR-2026-0777 резко падает запас хода и отключается питание при подъёме в горку.",
+    "expected_tracking_code": "CAR-2026-0777",
+    "expected_needs_clarification": false,
+    "expected_root_cause_type": "DB_CLEAN_EXTERNAL_SUSPECTED",
+    "expected_entities": ["LOT-BAT-2026-015", "JK-BMS-6S", "RS550-24V"],
+    "expected_required_tools": [
+      "get_item_genealogy",
+      "get_item_history",
+      "get_lot_quality_stats",
+      "get_instrument_channel_anomalies",
+      "get_operator_anomalies"
+    ],
+    "expected_web_research": true,
+    "expected_recall_cars_from_manifest": false,
+    "expected_action_types": ["CREATE_SUPPORT_TICKET"],
+    "simulate_incomplete_draft_catch": false
+  },
+  {
+    "case_id": "GC-06-MISSING-SERIAL-CLARIFICATION",
+    "description": "Обращение без серийного номера -> запрос уточнения без запуска SQL-тулов",
+    "query": "Здравствуйте, в нашем парке одна машинка перестала ехать и батарея быстро села.",
+    "expected_tracking_code": null,
+    "expected_needs_clarification": true,
+    "expected_root_cause_type": null,
+    "expected_entities": [],
+    "expected_required_tools": [],
+    "expected_web_research": false,
+    "expected_recall_cars_from_manifest": false,
+    "expected_action_types": [],
+    "simulate_incomplete_draft_catch": false
+  },
+  {
+    "case_id": "GC-07-BORDERLINE-HEALTHY-NO-CONDITIONS",
+    "description": "Здоровая машинка CAR-2026-0050 с жалобой на эксплуатацию на неровной брусчатке (пограничный шум, БД чиста)",
+    "query": "У машинки CAR-2026-0050 на неровной брусчатке иногда срабатывает отсечка при перегрузке.",
+    "expected_tracking_code": "CAR-2026-0050",
+    "expected_needs_clarification": false,
+    "expected_root_cause_type": "DB_CLEAN_EXTERNAL_SUSPECTED",
+    "expected_entities": ["RS550-24V", "JK-BMS-6S"],
+    "expected_required_tools": [
+      "get_item_genealogy",
+      "get_item_history",
+      "get_lot_quality_stats",
+      "get_instrument_channel_anomalies",
+      "get_operator_anomalies"
+    ],
+    "expected_web_research": true,
+    "expected_recall_cars_from_manifest": false,
+    "expected_action_types": ["CREATE_SUPPORT_TICKET"],
+    "simulate_incomplete_draft_catch": false
+  },
+  {
+    "case_id": "GC-08-UNKNOWN-SERIAL-INCONCLUSIVE",
+    "description": "Несуществующий серийный номер CAR-2026-9999 -> корректная фиксация отсутствия в БД без похода в веб",
+    "query": "Проверьте, пожалуйста, машинку CAR-2026-9999 — не включается после дождя.",
+    "expected_tracking_code": "CAR-2026-9999",
+    "expected_needs_clarification": false,
+    "expected_root_cause_type": "INCONCLUSIVE",
+    "expected_entities": ["CAR-2026-9999"],
+    "expected_required_tools": [
+      "get_item_genealogy"
+    ],
+    "expected_web_research": false,
+    "expected_recall_cars_from_manifest": false,
+    "expected_action_types": ["CREATE_SUPPORT_TICKET"],
+    "simulate_incomplete_draft_catch": false
+  }
+]

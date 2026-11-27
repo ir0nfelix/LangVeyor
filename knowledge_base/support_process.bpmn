@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  id="Definitions_SupportRCA"
+                  targetNamespace="http://langveyor.local/bpmn/support-rca">
+  <bpmn:process id="Process_SupportRCA" name="Процесс расследования обращений из парков аттракционов (RCA)" isExecutable="true">
+    <bpmn:laneSet id="LaneSet_Main">
+      <bpmn:lane id="Lane_Intake" name="Оператор линии поддержки / Intake Agent">
+        <bpmn:flowNodeRef>StartEvent_TicketReceived</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ExtractSerialAndSymptom</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_HasSerial</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_NeedSerial</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Investigator" name="Инженер RCA / Investigator Agent">
+        <bpmn:flowNodeRef>Task_GenealogyAndHistory</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_SymptomBranch</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_BatteryLotAndStandCheck</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_MotorOperatorCheck</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_FullPowertrainCheck</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_BatchDefectOver10</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_RecallAffectedCars</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_RepeatTicket</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_EscalateLeadEngineer</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_AuditorAndWeb" name="Ревизор (Auditor) и Внешний поиск">
+        <bpmn:flowNodeRef>Gateway_DbClean</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ExternalBomResearch</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_CompileVerdict</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_HumanApprovalHITL</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_Resolved</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+
+    <bpmn:startEvent id="StartEvent_TicketReceived" name="Поступило обращение из парка аттракционов">
+      <bpmn:outgoing>Flow_Start_To_Extract</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:userTask id="Task_ExtractSerialAndSymptom" name="Идентификация серийника машинки (CAR-YYYY-XXXX), симптома и условий эксплуатации">
+      <bpmn:incoming>Flow_Start_To_Extract</bpmn:incoming>
+      <bpmn:outgoing>Flow_Extract_To_HasSerial</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:exclusiveGateway id="Gateway_HasSerial" name="Указан серийный номер машинки?">
+      <bpmn:incoming>Flow_Extract_To_HasSerial</bpmn:incoming>
+      <bpmn:outgoing>Flow_NoSerial</bpmn:outgoing>
+      <bpmn:outgoing>Flow_HasSerial</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:endEvent id="EndEvent_NeedSerial" name="Запрос уточнения серийного номера у оператора">
+      <bpmn:incoming>Flow_NoSerial</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:serviceTask id="Task_GenealogyAndHistory" name="Обязательный шаг 1: Раскрутить генеалогию (get_item_genealogy) и историю сборок/тикетов (get_item_history)">
+      <bpmn:incoming>Flow_HasSerial</bpmn:incoming>
+      <bpmn:outgoing>Flow_Genealogy_To_Symptom</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:exclusiveGateway id="Gateway_SymptomBranch" name="Категория симптома обращения">
+      <bpmn:incoming>Flow_Genealogy_To_Symptom</bpmn:incoming>
+      <bpmn:outgoing>Flow_Sym_Battery</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Sym_Motor</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Sym_NoPower</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:serviceTask id="Task_BatteryLotAndStandCheck" name="Ветка АКБ: проверить статистику партии (get_lot_quality_stats) и дрейф канала зарядного стенда (get_instrument_channel_anomalies)">
+      <bpmn:incoming>Flow_Sym_Battery</bpmn:incoming>
+      <bpmn:outgoing>Flow_Battery_To_BatchGate</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_MotorOperatorCheck" name="Ветка мотор/редуктор: проверить аномалии оператора сборки в окне ±14 дней (get_operator_anomalies) и момент затяжки RS550-24V">
+      <bpmn:incoming>Flow_Sym_Motor</bpmn:incoming>
+      <bpmn:outgoing>Flow_Motor_To_BatchGate</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_FullPowertrainCheck" name="Ветка не включается: проверить партию АКБ (get_lot_quality_stats), канал стенда (get_instrument_channel_anomalies) и оператора сборки (get_operator_anomalies)">
+      <bpmn:incoming>Flow_Sym_NoPower</bpmn:incoming>
+      <bpmn:outgoing>Flow_NoPower_To_BatchGate</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:exclusiveGateway id="Gateway_BatchDefectOver10" name="Брак в партии АКБ &gt; 10% или партия на HOLD?">
+      <bpmn:incoming>Flow_Battery_To_BatchGate</bpmn:incoming>
+      <bpmn:incoming>Flow_Motor_To_BatchGate</bpmn:incoming>
+      <bpmn:incoming>Flow_NoPower_To_BatchGate</bpmn:incoming>
+      <bpmn:outgoing>Flow_Batch_Recall</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Batch_Ok</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:serviceTask id="Task_RecallAffectedCars" name="Обязательный Recall: найти все затронутые машинки партии (find_affected_products_by_lot) и подготовить отзыв/профилактику">
+      <bpmn:incoming>Flow_Batch_Recall</bpmn:incoming>
+      <bpmn:outgoing>Flow_Recall_To_RepeatGate</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:exclusiveGateway id="Gateway_RepeatTicket" name="Есть повторное обращение (предыдущий support_ticket) по этой машинке?">
+      <bpmn:incoming>Flow_Recall_To_RepeatGate</bpmn:incoming>
+      <bpmn:incoming>Flow_Batch_Ok</bpmn:incoming>
+      <bpmn:outgoing>Flow_Repeat_Escalate</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Repeat_No</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:userTask id="Task_EscalateLeadEngineer" name="Эскалация ведущему инженеру сервиса (приоритет CRITICAL, статус ESCALATED)">
+      <bpmn:incoming>Flow_Repeat_Escalate</bpmn:incoming>
+      <bpmn:outgoing>Flow_Escalate_To_DbClean</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:exclusiveGateway id="Gateway_DbClean" name="Все проверки БД чистые (0 внутренних аномалий)?">
+      <bpmn:incoming>Flow_Escalate_To_DbClean</bpmn:incoming>
+      <bpmn:incoming>Flow_Repeat_No</bpmn:incoming>
+      <bpmn:outgoing>Flow_DbClean_Web</bpmn:outgoing>
+      <bpmn:outgoing>Flow_DbDirty_Verdict</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:serviceTask id="Task_ExternalBomResearch" name="Внешняя инженерная диагностика по BOM (RS550-24V, JK-BMS-6S) и условиям эксплуатации (web_researcher_node)">
+      <bpmn:incoming>Flow_DbClean_Web</bpmn:incoming>
+      <bpmn:outgoing>Flow_Web_To_Verdict</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:serviceTask id="Task_CompileVerdict" name="Сформировать раздельный отчёт: Факты БД vs Внешние гипотезы + Предлагаемые действия">
+      <bpmn:incoming>Flow_DbDirty_Verdict</bpmn:incoming>
+      <bpmn:incoming>Flow_Web_To_Verdict</bpmn:incoming>
+      <bpmn:outgoing>Flow_Verdict_To_HITL</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:userTask id="Task_HumanApprovalHITL" name="HITL Подтверждение оператора: запись тикета / отзыва / блокировки калибровки в PostgreSQL">
+      <bpmn:incoming>Flow_Verdict_To_HITL</bpmn:incoming>
+      <bpmn:outgoing>Flow_HITL_To_End</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:endEvent id="EndEvent_Resolved" name="Инцидент зафиксирован, действия применены">
+      <bpmn:incoming>Flow_HITL_To_End</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_Start_To_Extract" sourceRef="StartEvent_TicketReceived" targetRef="Task_ExtractSerialAndSymptom"/>
+    <bpmn:sequenceFlow id="Flow_Extract_To_HasSerial" sourceRef="Task_ExtractSerialAndSymptom" targetRef="Gateway_HasSerial"/>
+    <bpmn:sequenceFlow id="Flow_NoSerial" name="Серийник отсутствует" sourceRef="Gateway_HasSerial" targetRef="EndEvent_NeedSerial">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">serial_present == false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_HasSerial" name="Серийник указан" sourceRef="Gateway_HasSerial" targetRef="Task_GenealogyAndHistory">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">serial_present == true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Genealogy_To_Symptom" sourceRef="Task_GenealogyAndHistory" targetRef="Gateway_SymptomBranch"/>
+
+    <bpmn:sequenceFlow id="Flow_Sym_Battery" name="BATTERY_LOW_RANGE: батарея не держит заезд / падение запаса хода" sourceRef="Gateway_SymptomBranch" targetRef="Task_BatteryLotAndStandCheck">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">symptom_category == 'BATTERY_LOW_RANGE'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Sym_Motor" name="MOTOR_STALL_OR_NOISE: заклинил моторчик / посторонний звук / рывки" sourceRef="Gateway_SymptomBranch" targetRef="Task_MotorOperatorCheck">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">symptom_category == 'MOTOR_STALL_OR_NOISE'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Sym_NoPower" name="NO_POWER_DEAD: машинка не включается / не работает" sourceRef="Gateway_SymptomBranch" targetRef="Task_FullPowertrainCheck">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">symptom_category == 'NO_POWER_DEAD'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_Battery_To_BatchGate" sourceRef="Task_BatteryLotAndStandCheck" targetRef="Gateway_BatchDefectOver10"/>
+    <bpmn:sequenceFlow id="Flow_Motor_To_BatchGate" sourceRef="Task_MotorOperatorCheck" targetRef="Gateway_BatchDefectOver10"/>
+    <bpmn:sequenceFlow id="Flow_NoPower_To_BatchGate" sourceRef="Task_FullPowertrainCheck" targetRef="Gateway_BatchDefectOver10"/>
+
+    <bpmn:sequenceFlow id="Flow_Batch_Recall" name="lot_defect_rate &gt; 10% или HOLD" sourceRef="Gateway_BatchDefectOver10" targetRef="Task_RecallAffectedCars">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">lot_defect_rate &gt; 0.10 or lot_hold == true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Batch_Ok" name="Брак партии &lt;= 10%" sourceRef="Gateway_BatchDefectOver10" targetRef="Gateway_RepeatTicket">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">lot_defect_rate &lt;= 0.10</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Recall_To_RepeatGate" sourceRef="Task_RecallAffectedCars" targetRef="Gateway_RepeatTicket"/>
+
+    <bpmn:sequenceFlow id="Flow_Repeat_Escalate" name="Повторное обращение по тому же серийнику" sourceRef="Gateway_RepeatTicket" targetRef="Task_EscalateLeadEngineer">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">has_prior_ticket == true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Repeat_No" name="Первичное обращение" sourceRef="Gateway_RepeatTicket" targetRef="Gateway_DbClean">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">has_prior_ticket == false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Escalate_To_DbClean" sourceRef="Task_EscalateLeadEngineer" targetRef="Gateway_DbClean"/>
+
+    <bpmn:sequenceFlow id="Flow_DbClean_Web" name="БД чистая: запуск внешнего поиска" sourceRef="Gateway_DbClean" targetRef="Task_ExternalBomResearch">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">db_anomalies_found == false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_DbDirty_Verdict" name="Аномалия доказана фактами БД" sourceRef="Gateway_DbClean" targetRef="Task_CompileVerdict">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">db_anomalies_found == true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Web_To_Verdict" sourceRef="Task_ExternalBomResearch" targetRef="Task_CompileVerdict"/>
+    <bpmn:sequenceFlow id="Flow_Verdict_To_HITL" sourceRef="Task_CompileVerdict" targetRef="Task_HumanApprovalHITL"/>
+    <bpmn:sequenceFlow id="Flow_HITL_To_End" sourceRef="Task_HumanApprovalHITL" targetRef="EndEvent_Resolved"/>
+  </bpmn:process>
+</bpmn:definitions>

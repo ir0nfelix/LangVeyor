@@ -1,0 +1,518 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_auto" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:collaboration id="Collaboration_1">
+    <bpmn:participant id="LangVeyor" name="MES RCA: Расследование обращений парка" processRef="Process_1_0" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_1_0" isExecutable="true">
+    <bpmn:laneSet id="laneSet0">
+      <bpmn:lane id="L_Intake" name="Приём и триаж (FAST)">
+        <bpmn:flowNodeRef>s1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_intake</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>g_serial</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_triage</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>e_clarify</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="L_Investigator" name="Следователь и MES SQL">
+        <bpmn:flowNodeRef>t_gen</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>g_found</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_inconcl</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>g_sym</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_bat</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_mot</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_full</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>g_recall</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_recall</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>g_repeat</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_esc</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_recheck</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="L_Auditor" name="Ревизор и Веб-поиск">
+        <bpmn:flowNodeRef>t_audit</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>g_audit</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_web</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="L_Verdict" name="Вердикт и HITL Postgres">
+        <bpmn:flowNodeRef>t_verdict</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_hitl</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>g_hitl</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>t_commit</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>e_ok</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>e_rejected</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="s1" name="Запрос из парка">
+      <bpmn:outgoing>flow0</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="t_intake" name="Разбор жалобы (Intake)">
+      <bpmn:incoming>flow0</bpmn:incoming>
+      <bpmn:outgoing>flow1</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="g_serial" name="Серийник?" default="flow3">
+      <bpmn:incoming>flow1</bpmn:incoming>
+      <bpmn:outgoing>flow2</bpmn:outgoing>
+      <bpmn:outgoing>flow3</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="t_triage" name="Триаж BPMN и Qdrant RAG">
+      <bpmn:incoming>flow2</bpmn:incoming>
+      <bpmn:outgoing>flow4</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="e_clarify" name="Запрос серийника">
+      <bpmn:incoming>flow3</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="t_gen" name="Генеалогия и история">
+      <bpmn:incoming>flow4</bpmn:incoming>
+      <bpmn:outgoing>flow5</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="g_found" name="В MES?" default="flow7">
+      <bpmn:incoming>flow5</bpmn:incoming>
+      <bpmn:outgoing>flow6</bpmn:outgoing>
+      <bpmn:outgoing>flow7</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="t_inconcl" name="Статус INCONCLUSIVE">
+      <bpmn:incoming>flow7</bpmn:incoming>
+      <bpmn:outgoing>flow8</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="g_sym" name="Симптом?" default="flow11">
+      <bpmn:incoming>flow6</bpmn:incoming>
+      <bpmn:outgoing>flow9</bpmn:outgoing>
+      <bpmn:outgoing>flow10</bpmn:outgoing>
+      <bpmn:outgoing>flow11</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="t_bat" name="АКБ и дрейф стенда">
+      <bpmn:incoming>flow9</bpmn:incoming>
+      <bpmn:outgoing>flow12</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="t_mot" name="Оператор и момент">
+      <bpmn:incoming>flow10</bpmn:incoming>
+      <bpmn:outgoing>flow13</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="t_full" name="Все 5 проверок SQL">
+      <bpmn:incoming>flow11</bpmn:incoming>
+      <bpmn:outgoing>flow14</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="g_recall" name="Брак &#62; 10%?" default="flow16">
+      <bpmn:incoming>flow12</bpmn:incoming>
+      <bpmn:incoming>flow13</bpmn:incoming>
+      <bpmn:incoming>flow14</bpmn:incoming>
+      <bpmn:outgoing>flow15</bpmn:outgoing>
+      <bpmn:outgoing>flow16</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="t_recall" name="Список машин отзыва">
+      <bpmn:incoming>flow16</bpmn:incoming>
+      <bpmn:outgoing>flow17</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="g_repeat" name="Повтор?" default="flow19">
+      <bpmn:incoming>flow15</bpmn:incoming>
+      <bpmn:incoming>flow17</bpmn:incoming>
+      <bpmn:outgoing>flow18</bpmn:outgoing>
+      <bpmn:outgoing>flow19</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="t_esc" name="Флаг эскалации">
+      <bpmn:incoming>flow19</bpmn:incoming>
+      <bpmn:outgoing>flow20</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="t_recheck" name="Добор 5 проверок БД">
+      <bpmn:incoming>flow24</bpmn:incoming>
+      <bpmn:outgoing>flow25</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="t_audit" name="Аудит фактов и BPMN">
+      <bpmn:incoming>flow18</bpmn:incoming>
+      <bpmn:incoming>flow20</bpmn:incoming>
+      <bpmn:incoming>flow25</bpmn:incoming>
+      <bpmn:outgoing>flow21</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="g_audit" name="Вердикт?" default="flow24">
+      <bpmn:incoming>flow21</bpmn:incoming>
+      <bpmn:outgoing>flow22</bpmn:outgoing>
+      <bpmn:outgoing>flow23</bpmn:outgoing>
+      <bpmn:outgoing>flow24</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="t_web" name="Поиск по BOM (Web)">
+      <bpmn:incoming>flow22</bpmn:incoming>
+      <bpmn:outgoing>flow26</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="t_verdict" name="Сборка отчёта RCA">
+      <bpmn:incoming>flow8</bpmn:incoming>
+      <bpmn:incoming>flow23</bpmn:incoming>
+      <bpmn:incoming>flow26</bpmn:incoming>
+      <bpmn:outgoing>flow27</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="t_hitl" name="HITL решение оператора">
+      <bpmn:incoming>flow27</bpmn:incoming>
+      <bpmn:outgoing>flow28</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="g_hitl" name="Одобрено?" default="flow30">
+      <bpmn:incoming>flow28</bpmn:incoming>
+      <bpmn:outgoing>flow29</bpmn:outgoing>
+      <bpmn:outgoing>flow30</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="t_commit" name="ACID запись в Postgres">
+      <bpmn:incoming>flow29</bpmn:incoming>
+      <bpmn:outgoing>flow31</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="e_ok" name="Инцидент закрыт">
+      <bpmn:incoming>flow31</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="e_rejected" name="Отклонено">
+      <bpmn:incoming>flow30</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="flow0" sourceRef="s1" targetRef="t_intake" />
+    <bpmn:sequenceFlow id="flow1" sourceRef="t_intake" targetRef="g_serial" />
+    <bpmn:sequenceFlow id="flow2" name="Да" sourceRef="g_serial" targetRef="t_triage" />
+    <bpmn:sequenceFlow id="flow3" name="Нет" sourceRef="g_serial" targetRef="e_clarify" />
+    <bpmn:sequenceFlow id="flow4" sourceRef="t_triage" targetRef="t_gen" />
+    <bpmn:sequenceFlow id="flow5" sourceRef="t_gen" targetRef="g_found" />
+    <bpmn:sequenceFlow id="flow6" name="Да" sourceRef="g_found" targetRef="g_sym" />
+    <bpmn:sequenceFlow id="flow7" name="Нет" sourceRef="g_found" targetRef="t_inconcl" />
+    <bpmn:sequenceFlow id="flow8" sourceRef="t_inconcl" targetRef="t_verdict" />
+    <bpmn:sequenceFlow id="flow9" name="АКБ" sourceRef="g_sym" targetRef="t_bat" />
+    <bpmn:sequenceFlow id="flow10" name="Мотор" sourceRef="g_sym" targetRef="t_mot" />
+    <bpmn:sequenceFlow id="flow11" name="Питание" sourceRef="g_sym" targetRef="t_full" />
+    <bpmn:sequenceFlow id="flow12" sourceRef="t_bat" targetRef="g_recall" />
+    <bpmn:sequenceFlow id="flow13" sourceRef="t_mot" targetRef="g_recall" />
+    <bpmn:sequenceFlow id="flow14" sourceRef="t_full" targetRef="g_recall" />
+    <bpmn:sequenceFlow id="flow15" name="До 10%" sourceRef="g_recall" targetRef="g_repeat" />
+    <bpmn:sequenceFlow id="flow16" name="Более 10%" sourceRef="g_recall" targetRef="t_recall" />
+    <bpmn:sequenceFlow id="flow17" sourceRef="t_recall" targetRef="g_repeat" />
+    <bpmn:sequenceFlow id="flow18" name="Нет" sourceRef="g_repeat" targetRef="t_audit" />
+    <bpmn:sequenceFlow id="flow19" name="Да" sourceRef="g_repeat" targetRef="t_esc" />
+    <bpmn:sequenceFlow id="flow20" sourceRef="t_esc" targetRef="t_audit" />
+    <bpmn:sequenceFlow id="flow21" sourceRef="t_audit" targetRef="g_audit" />
+    <bpmn:sequenceFlow id="flow22" name="БД чиста" sourceRef="g_audit" targetRef="t_web" />
+    <bpmn:sequenceFlow id="flow23" name="APPROVED" sourceRef="g_audit" targetRef="t_verdict" />
+    <bpmn:sequenceFlow id="flow24" name="REJECTED" sourceRef="g_audit" targetRef="t_recheck" />
+    <bpmn:sequenceFlow id="flow25" sourceRef="t_recheck" targetRef="t_audit" />
+    <bpmn:sequenceFlow id="flow26" sourceRef="t_web" targetRef="t_verdict" />
+    <bpmn:sequenceFlow id="flow27" sourceRef="t_verdict" targetRef="t_hitl" />
+    <bpmn:sequenceFlow id="flow28" sourceRef="t_hitl" targetRef="g_hitl" />
+    <bpmn:sequenceFlow id="flow29" name="Да" sourceRef="g_hitl" targetRef="t_commit" />
+    <bpmn:sequenceFlow id="flow30" name="Нет" sourceRef="g_hitl" targetRef="e_rejected" />
+    <bpmn:sequenceFlow id="flow31" sourceRef="t_commit" targetRef="e_ok" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Collaboration_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_Collaboration_1" bpmnElement="Collaboration_1">
+      <bpmndi:BPMNShape id="BPMNShape_LangVeyor" bpmnElement="LangVeyor" isHorizontal="true">
+        <dc:Bounds x="80" y="80" width="3942" height="1760" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_L_Intake" bpmnElement="L_Intake" isHorizontal="true">
+        <dc:Bounds x="110" y="80" width="3912" height="400" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_L_Investigator" bpmnElement="L_Investigator" isHorizontal="true">
+        <dc:Bounds x="110" y="480" width="3912" height="720" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_L_Auditor" bpmnElement="L_Auditor" isHorizontal="true">
+        <dc:Bounds x="110" y="1200" width="3912" height="240" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_L_Verdict" bpmnElement="L_Verdict" isHorizontal="true">
+        <dc:Bounds x="110" y="1440" width="3912" height="400" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_s1" bpmnElement="s1">
+        <dc:Bounds x="150" y="182" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="136" y="223" width="64" height="28" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_t_intake" bpmnElement="t_intake">
+        <dc:Bounds x="286" y="160" width="130" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_g_serial" bpmnElement="g_serial" isMarkerVisible="true">
+        <dc:Bounds x="516" y="175" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="508" y="156" width="67" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_t_triage" bpmnElement="t_triage">
+        <dc:Bounds x="666" y="320" width="130" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_e_clarify" bpmnElement="e_clarify">
+        <dc:Bounds x="713" y="182" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="698" y="223" width="67" height="28" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_t_gen" bpmnElement="t_gen">
+        <dc:Bounds x="896" y="560" width="130" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_g_found" bpmnElement="g_found" isMarkerVisible="true">
+        <dc:Bounds x="1126" y="575" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1126" y="556" width="51" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_t_inconcl" bpmnElement="t_inconcl">
+        <dc:Bounds x="1276" y="560" width="130" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_g_sym" bpmnElement="g_sym" isMarkerVisible="true">
+        <dc:Bounds x="1316" y="735" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1311" y="716" width="60" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_t_bat" bpmnElement="t_bat">
+        <dc:Bounds x="1506" y="880" width="130" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_t_mot" bpmnElement="t_mot">
+        <dc:Bounds x="1506" y="1040" width="130" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_t_full" bpmnElement="t_full">
+        <dc:Bounds x="1506" y="720" width="130" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_g_recall" bpmnElement="g_recall" isMarkerVisible="true">
+        <dc:Bounds x="1736" y="735" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1724" y="716" width="75" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_t_recall" bpmnElement="t_recall">
+        <dc:Bounds x="1886" y="720" width="130" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_g_repeat" bpmnElement="g_repeat" isMarkerVisible="true">
+        <dc:Bounds x="2116" y="735" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2115" y="716" width="53" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_t_esc" bpmnElement="t_esc">
+        <dc:Bounds x="2266" y="720" width="130" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_t_recheck" bpmnElement="t_recheck">
+        <dc:Bounds x="2876" y="880" width="130" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_t_audit" bpmnElement="t_audit">
+        <dc:Bounds x="2496" y="1280" width="130" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_g_audit" bpmnElement="g_audit" isMarkerVisible="true">
+        <dc:Bounds x="2726" y="1295" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2681" y="1350" width="60" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_t_web" bpmnElement="t_web">
+        <dc:Bounds x="2876" y="1280" width="130" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_t_verdict" bpmnElement="t_verdict">
+        <dc:Bounds x="3106" y="1520" width="130" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_t_hitl" bpmnElement="t_hitl">
+        <dc:Bounds x="3336" y="1520" width="130" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_g_hitl" bpmnElement="g_hitl" isMarkerVisible="true">
+        <dc:Bounds x="3566" y="1535" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3558" y="1516" width="67" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_t_commit" bpmnElement="t_commit">
+        <dc:Bounds x="3716" y="1680" width="130" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_e_ok" bpmnElement="e_ok">
+        <dc:Bounds x="3946" y="1702" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3934" y="1743" width="60" height="28" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_e_rejected" bpmnElement="e_rejected">
+        <dc:Bounds x="3763" y="1542" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3748" y="1583" width="67" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow0" bpmnElement="flow0">
+        <di:waypoint x="186" y="200" />
+        <di:waypoint x="286" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow1" bpmnElement="flow1">
+        <di:waypoint x="416" y="200" />
+        <di:waypoint x="516" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow3" bpmnElement="flow3">
+        <di:waypoint x="566" y="200" />
+        <di:waypoint x="713" y="200" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="627" y="178" width="25" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow7" bpmnElement="flow7">
+        <di:waypoint x="1176" y="600" />
+        <di:waypoint x="1276" y="600" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1214" y="578" width="25" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow8" bpmnElement="flow8">
+        <di:waypoint x="1406" y="600" />
+        <di:waypoint x="3171" y="600" />
+        <di:waypoint x="3171" y="1520" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow11" bpmnElement="flow11">
+        <di:waypoint x="1366" y="760" />
+        <di:waypoint x="1506" y="760" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1410" y="738" width="53" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow14" bpmnElement="flow14">
+        <di:waypoint x="1636" y="760" />
+        <di:waypoint x="1736" y="760" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow16" bpmnElement="flow16">
+        <di:waypoint x="1786" y="760" />
+        <di:waypoint x="1886" y="760" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1804" y="768" width="64" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow17" bpmnElement="flow17">
+        <di:waypoint x="2016" y="760" />
+        <di:waypoint x="2116" y="760" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow19" bpmnElement="flow19">
+        <di:waypoint x="2166" y="760" />
+        <di:waypoint x="2266" y="760" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2217" y="738" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow20" bpmnElement="flow20">
+        <di:waypoint x="2396" y="760" />
+        <di:waypoint x="2561" y="760" />
+        <di:waypoint x="2561" y="1280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow21" bpmnElement="flow21">
+        <di:waypoint x="2626" y="1320" />
+        <di:waypoint x="2726" y="1320" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow22" bpmnElement="flow22">
+        <di:waypoint x="2776" y="1320" />
+        <di:waypoint x="2876" y="1320" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2798" y="1298" width="57" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow26" bpmnElement="flow26">
+        <di:waypoint x="3006" y="1320" />
+        <di:waypoint x="3171" y="1320" />
+        <di:waypoint x="3171" y="1520" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow27" bpmnElement="flow27">
+        <di:waypoint x="3236" y="1560" />
+        <di:waypoint x="3336" y="1560" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow28" bpmnElement="flow28">
+        <di:waypoint x="3466" y="1560" />
+        <di:waypoint x="3566" y="1560" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow30" bpmnElement="flow30">
+        <di:waypoint x="3616" y="1560" />
+        <di:waypoint x="3763" y="1560" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3677" y="1538" width="25" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow2" bpmnElement="flow2">
+        <di:waypoint x="541" y="225" />
+        <di:waypoint x="541" y="360" />
+        <di:waypoint x="666" y="360" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="547" y="286" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow6" bpmnElement="flow6">
+        <di:waypoint x="1151" y="625" />
+        <di:waypoint x="1151" y="760" />
+        <di:waypoint x="1316" y="760" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1157" y="686" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow9" bpmnElement="flow9">
+        <di:waypoint x="1341" y="785" />
+        <di:waypoint x="1341" y="920" />
+        <di:waypoint x="1506" y="920" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1411" y="898" width="25" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow10" bpmnElement="flow10">
+        <di:waypoint x="1341" y="785" />
+        <di:waypoint x="1341" y="1080" />
+        <di:waypoint x="1506" y="1080" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1346" y="993" width="39" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow23" bpmnElement="flow23">
+        <di:waypoint x="2751" y="1345" />
+        <di:waypoint x="2751" y="1560" />
+        <di:waypoint x="3106" y="1560" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2756" y="1446" width="76" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow24" bpmnElement="flow24">
+        <di:waypoint x="2751" y="1295" />
+        <di:waypoint x="2751" y="920" />
+        <di:waypoint x="2876" y="920" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2756" y="1101" width="76" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow29" bpmnElement="flow29">
+        <di:waypoint x="3591" y="1585" />
+        <di:waypoint x="3591" y="1720" />
+        <di:waypoint x="3716" y="1720" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3597" y="1646" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow4" bpmnElement="flow4">
+        <di:waypoint x="796" y="360" />
+        <di:waypoint x="961" y="360" />
+        <di:waypoint x="961" y="560" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow5" bpmnElement="flow5">
+        <di:waypoint x="1026" y="600" />
+        <di:waypoint x="1126" y="600" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow12" bpmnElement="flow12">
+        <di:waypoint x="1636" y="920" />
+        <di:waypoint x="1761" y="920" />
+        <di:waypoint x="1761" y="785" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow13" bpmnElement="flow13">
+        <di:waypoint x="1636" y="1080" />
+        <di:waypoint x="1761" y="1080" />
+        <di:waypoint x="1761" y="785" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow15" bpmnElement="flow15">
+        <di:waypoint x="1761" y="785" />
+        <di:waypoint x="1761" y="820" />
+        <di:waypoint x="2141" y="820" />
+        <di:waypoint x="2141" y="785" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1930" y="828" width="43" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow18" bpmnElement="flow18">
+        <di:waypoint x="2166" y="760" />
+        <di:waypoint x="2186" y="760" />
+        <di:waypoint x="2186" y="785" />
+        <di:waypoint x="2186" y="1320" />
+        <di:waypoint x="2496" y="1320" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2191" y="766" width="25" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow31" bpmnElement="flow31">
+        <di:waypoint x="3846" y="1720" />
+        <di:waypoint x="3946" y="1720" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_flow25" bpmnElement="flow25">
+        <di:waypoint x="2941" y="880" />
+        <di:waypoint x="2941" y="860" />
+        <di:waypoint x="2561" y="860" />
+        <di:waypoint x="2561" y="1280" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
